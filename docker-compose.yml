@@ -1,0 +1,73 @@
+version: '2'
+services:
+  
+  elasticsearch1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.5.2
+    container_name: elasticsearch1
+    environment:
+      - cluster.name=esnet
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+  
+  elasticsearch2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.5.2
+    container_name: elasticsearch2
+    environment:
+      - cluster.name=esnet
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - "discovery.zen.ping.unicast.hosts=elasticsearch1"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - esdata2:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+
+  beats:
+    image: docker.elastic.co/beats/heartbeat:5.5.2
+    container_name: heartbeat
+    volumes:
+      - ./conf/beats/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml
+    networks:
+      - esnet
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:5.5.2
+    container_name: kibana
+    environment:
+      - elasticsearch.url=http://elasticsearch1:9200
+      - elasticsearch.username=false
+      - elasticsearch.password=false
+      - xpack.monitoring.ui.container.elasticsearch.enabled=false
+    volumes:
+      - ./conf/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml  
+    ports:
+      - 5601:5601
+    networks:
+      - esnet
+            
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+
+networks:
+  esnet:
