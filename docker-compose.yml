@@ -16,10 +16,11 @@ services:
     mem_limit: 1g
     volumes:
       - esdata1:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
+    # ports:
+    #   - 9200:9200
     networks:
       - esnet
+      - devnet
   
   elasticsearch2:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.5.2
@@ -35,14 +36,19 @@ services:
         soft: -1
         hard: -1
     mem_limit: 1g
+    depends_on:
+      - elasticsearch1
     volumes:
       - esdata2:/usr/share/elasticsearch/data
     networks:
       - esnet
+      - devnet
 
   beats:
     image: docker.elastic.co/beats/heartbeat:5.5.2
     container_name: heartbeat
+    depends_on:
+      - elasticsearch1
     volumes:
       - ./conf/beats/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml
     networks:
@@ -56,12 +62,15 @@ services:
       - elasticsearch.username=false
       - elasticsearch.password=false
       - xpack.monitoring.ui.container.elasticsearch.enabled=false
+    depends_on:
+      - elasticsearch1
     volumes:
       - ./conf/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml  
-    ports:
-      - 5601:5601
+    # ports:
+    #   - 5601:5601
     networks:
       - esnet
+      - devnet
             
 volumes:
   esdata1:
@@ -71,3 +80,5 @@ volumes:
 
 networks:
   esnet:
+  devnet:
+    external: true
